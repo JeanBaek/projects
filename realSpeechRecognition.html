@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Speech Detection</title>
+</head>
+<body>
+
+
+  <div class="words" contenteditable>
+  </div>
+
+
+
+<script>
+  window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  const recognition = new SpeechRecognition();
+  recognition.interimResults = true;
+    // 이걸 true로 두기 때문에, 우리가 말하는 동시에 언어인식 및 화면출력이 될 수 있는 것.
+    // 만약 이걸 입력하지 않거나 false로 두면, 동시에 인식 및 출력이 불가하기 때문에 한 문장씩 띄어서 말해야 한다.
+
+  let p = document.createElement('p');
+  const words = document.querySelector('.words');
+  words.appendChild(p);
+
+  recognition.addEventListener('result', e => {
+    const transcript = Array.from(e.results)
+      .map(result => result[0])
+      .map(result => result.transcript)
+      .join('')
+
+      p.textContent = transcript;
+      if (e.results[0].isFinal) {
+        p = document.createElement('p');
+        words.appendChild(p);
+      }
+      // 언어인식이 멈출 때, 새로운 p 태그를 만들어서 언어를 저장한다.
+
+      if(transcript.includes('지니')) {
+        console.log('🧞‍♂️🧞🧞‍♀️🧞‍♂️🧞🧞‍♀️🧞‍♂️🧞🧞‍♀️🧞‍♂️🧞🧞‍♀️')
+      }
+
+      /*
+      if(transcript.includes('get the weather')) {
+      console.log('Getting the weather');
+    }
+      시리한테 날씨를 알려달라고 말하는 방법은 수천가지이다.
+      그러나 API는 그 중 일부만 알아듣는다.
+      그래서 이런 방법을 통해 사람이 말한 문장을
+      API가 알아들을 수 있도록 바꿔줄 수 있다.
+      */
+
+    console.log(transcript);
+  });
+
+  recognition.addEventListener('end', recognition.start);
+
+  recognition.start();
+
+</script>
+
+
+
+  <style>
+    html {
+      font-size: 10px;
+    }
+
+    body {
+      background: #ffc600;
+      font-family: 'helvetica neue';
+      font-weight: 200;
+      font-size: 20px;
+    }
+
+    .words {
+      max-width: 500px;
+      margin: 50px auto;
+      background: white;
+      border-radius: 5px;
+      box-shadow: 10px 10px 0 rgba(0,0,0,0.1);
+      padding: 1rem 2rem 1rem 5rem;
+      background: -webkit-gradient(linear, 0 0, 0 100%, from(#d9eaf3), color-stop(4%, #fff)) 0 4px;
+      background-size: 100% 3rem;
+      position: relative;
+      line-height: 3rem;
+    }
+
+    p {
+      margin: 0 0 3rem;
+    }
+
+    .words:before {
+      content: '';
+      position: absolute;
+      width: 4px;
+      top: 0;
+      left: 30px;
+      bottom: 0;
+      border: 1px solid;
+      border-color: transparent #efe4e4;
+    }
+  </style>
+
+</body>
+</html>
