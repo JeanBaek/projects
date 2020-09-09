@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Get User Media Code Along!</title>
+</head>
+<body>
+
+  <style>
+    html {
+  box-sizing: border-box;
+}
+
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+html {
+  font-size: 10px;
+  background: #ffc600;
+}
+
+.photobooth {
+  background: white;
+  max-width: 150rem;
+  margin: 2rem auto;
+  border-radius: 2px;
+}
+
+/*clearfix*/
+.photobooth:after {
+  content: '';
+  display: block;
+  clear: both;
+}
+
+.photo {
+  width: 100%;
+  float: left;
+}
+
+.player {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width:200px;
+}
+
+/*
+  Strip!
+*/
+
+.strip {
+  padding: 2rem;
+}
+
+.strip img {
+  width: 100px;
+  overflow-x: scroll;
+  padding: 0.8rem 0.8rem 2.5rem 0.8rem;
+  box-shadow: 0 0 3px rgba(0,0,0,0.2);
+  background: white;
+}
+
+.strip a:nth-child(5n+1) img { transform: rotate(10deg); }
+.strip a:nth-child(5n+2) img { transform: rotate(-2deg); }
+.strip a:nth-child(5n+3) img { transform: rotate(8deg); }
+.strip a:nth-child(5n+4) img { transform: rotate(-11deg); }
+.strip a:nth-child(5n+5) img { transform: rotate(12deg); }
+
+  </style>
+
+
+
+
+
+  <div class="photobooth">
+    <div class="controls">
+      <button onClick="takePhoto()">Take Photo</button>
+       <div class="rgb">
+          <label for="rmin">Red Min:</label>
+          <input type="range" min=0 max=255 name="rmin">
+          <label for="rmax">Red Max:</label>
+          <input type="range" min=0 max=255 name="rmax">
+          <br>
+          <label for="gmin">Green Min:</label>
+          <input type="range" min=0 max=255 name="gmin">
+          <label for="gmax">Green Max:</label>
+          <input type="range" min=0 max=255 name="gmax">
+          <br>
+          <label for="bmin">Blue Min:</label>
+          <input type="range" min=0 max=255 name="bmin">
+          <label for="bmax">Blue Max:</label>
+          <input type="range" min=0 max=255 name="bmax">
+       </div>
+    </div>
+
+    <canvas class="photo"></canvas>
+    <video class="player"></video>
+    <div class="strip"></div>
+  </div>
+
+  <!-- <audio class="snap" src="http://wesbos.com/demos/photobooth/snap.mp3" hidden></audio> -->
+  <!-- 페이지 자체가 사라졌음. 찰칵 소리가 중요한 것은 아니기 때문에, 생략. -->
+
+  <script>
+
+    const video = document.querySelector('.player');
+    const canvas = document.querySelector('.photo');
+    const ctx = canvas.getContext('2d');
+    const strip = document.querySelector('.strip');
+    // const snap = document.querySelector('.snap');
+
+    function getVideo() {
+      navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        .then(localMediaStream => {
+          console.log(localMediaStream);
+          // video.src = window.URL.createObjectURL(localMediaStream);
+          video.srcObject = localMediaStream;
+          video.play();
+        })
+        .catch(err => {
+          console.error(`OH NO!!!`, err);
+        });
+    }
+
+    function paintToCanvas() {
+      const width = video.videoWidth;
+      const height = video.videoHeight;
+      canvas.width = width;
+      canvas.height = height;
+
+      return setInterval(() => {
+        ctx.drawImage(video, 0, 0, width, height);
+        // 픽셀 추출
+        let pixels = ctx.getImageData(0, 0, width, height);
+        // mess with 픽셀
+        // pixels = redEffect(pixels);
+        pixels = rgbSplit(pixels);
+        ctx.globalAlpha = 0.1;
+        // pixels = greenScreen(pixels);
+        // put 픽셀 back
+        ctx.putImageData(pixels, 0, 0);
+      }, 16);
+    }
+
+    function takePhoto() {
+      // 캔버스에서 데이터를 추출하는 코드
+      const data = canvas.toDataURL('image/jpeg');
+      const link = document.createElement('a');
+      link.href = data;
+      link.setAttribute('download', 'pretty');
+      link.innerHTML = `<img src="${data}" alt="Pretty Woman" />`;
+      strip.insertBefore(link, strip.firstChild);
+    }
+
+    function redEffect(pixels) {
+      for(let i=0; i<pixels.data.length; i+=4) {
+        pixels.data[i+0] = pixels.data[i+0] + 100; // r
+        pixels.data[i+1] = pixels.data[i+1] - 50; // g
+        pixels.data[i+2] = pixels.data[i+2] * 1.5; // b // 픽셀 1개 중 4번째인 알파는 별도지정이 필요없음(알파는 색을 갖고있는 정보가 아니기 때문에)
+      }
+      return pixels;
+    }
+
+    function rgbSplit(pixels) {
+      for(let i=0; i<pixels.data.length; i+=4) {
+        // pulling apart the r, g, b
+        pixels.data[i-150] = pixels.data[i+0]; // r
+        pixels.data[i+1000] = pixels.data[i+1]; // g
+        pixels.data[i-3000] = pixels.data[i+2]; // b // 픽셀 1개 중 4번째인 알파는 별도지정이 필요없음(알파는 색을 갖고있는 정보가 아니기 때문에)
+      }
+      return pixels;
+    }
+
+    function greenScreen(pixels) {
+      let levels = {};
+
+      document.querySelectorAll('.rgb input').forEach((input) => {
+        levels[input.name] = input.value;
+      });
+
+      for (i=0; i<pixels.data.length; i=i+4) {
+        red = pixels.data[i+0];
+        green = pixels.data[i+1];
+        blue = pixels.data[i+2];
+        alpha = pixels.data[i+3];
+
+        if (red >= levels.rmin
+          && green >= levels.gmin
+          && blue >= levels.bmin
+          && red <= levels.rmax
+          && green <= levels.gmax
+          && blue <= levels.bmax) {
+            pixels.data[i+3] = 0;
+          }
+      }
+
+      return pixels;
+    }
+
+    getVideo();
+
+
+    video.addEventListener('canplay', paintToCanvas);
+
+
+  </script>
+
+</body>
+</html>
