@@ -45,7 +45,7 @@ function displayEndTime(timestamp) {
   const adjustedHour = hour < 10 ? '0' : ''
   const adjustedHour2 = hour > 12 ? hour -12 : hour
   const adjustedMinutes = minutes < 10 ? '0' : ''
-  endTime.textContent = `${dayNight} ${adjustedHour}${adjustedHour2}:${adjustedMinutes}${minutes}에 만나요 ^-^`;
+  endTime.textContent = `${dayNight} ${adjustedHour}${adjustedHour2}시 ${adjustedMinutes}${minutes}분에 만나요 ^-^`;
 }
 
 function startTimer() {
